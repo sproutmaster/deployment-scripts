@@ -1,0 +1,6 @@
+COUCHDB_USER=
+COUCHDB_PASS=
+OBS_DOMAIN=
+AUTH=
+
+# For auth: echo $(htpasswd -nB username) | sed -e s/\\$/\\$\\$/g

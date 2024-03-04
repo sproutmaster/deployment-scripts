@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  traefik:
+    image: "traefik"
+    container_name: "traefik"
+    restart: "always"
+    command:
+      - "--api.insecure=false"
+      - "--api.dashboard=false"
+      - "--log.level=DEBUG"
+      - "--providers.docker=true"
+      - "--global.sendAnonymousUsage=false"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.websecure.address=:443"
+
+      - "--certificatesresolvers.tls.acme.httpchallenge=true"
+      - "--certificatesresolvers.tls.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.tls.acme.email=${EMAIL}"
+      - "--certificatesresolvers.tls.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "traefik:/letsencrypt"
+    # labels:
+    #   - "traefik.http.middlewares.traefik-auth.basicauth.users=${AUTH}"
+    #   - "traefik.http.routers.traefik.rule=Host(`${DOMAIN}`)"
+    #   - "traefik.http.routers.traefik.tls=true"
+    #   - "traefik.http.routers.traefik.tls.certresolver=tls"
+
+networks:
+  default:
+    name: traefik
+    external: true
+
+volumes:
+  traefik:
