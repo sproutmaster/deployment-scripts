@@ -5,10 +5,18 @@ This is a repo to store deployment scripts I use. Traefik acts as a reverse prox
 
 ### To spin up traefik:
 ```
-docker compose -f traefik.yaml up --force-recreate
+docker compose -f traefik.yaml up -d
 ```
 
 ### For everything else:
 ```
-docker compose -f <compose-file>.yaml up --force-recreate -d --build
+docker compose -f <compose-file>.yaml up  -d
+```
+
+### Note
+
+If you've changed stuff after deploying a container, add arguments to docker as needed when re-deploying
+
+```
+--force-recreate --build
 ```
