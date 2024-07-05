@@ -11,7 +11,7 @@ services:
       - "--log.level=DEBUG"
       - "--providers.docker=true"
       - "--global.sendAnonymousUsage=false"
-      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.exposedbydefault=true"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
