@@ -1,0 +1,116 @@
+version: '3.8'
+services:
+
+  # Using cloudflare to get a cert here. Uncomment traefik if running on a different machine with a single compose file.
+  # traefik:
+  #   image: traefik
+  #   container_name: traefik
+  #   restart: always
+  #   command:
+  #     - '--log.level=DEBUG'
+  #     - '--providers.docker=true'
+  #     - '--global.sendAnonymousUsage=false'
+  #     - '--providers.docker.exposedbydefault=true'
+  #     - '--entrypoints.web.address=:80'
+  #     - '--entrypoints.web.http.redirections.entrypoint.to=websecure'
+  #     - '--entrypoints.web.http.redirections.entrypoint.scheme=https'
+  #     - '--entrypoints.websecure.address=:443'
+
+  #     - '--certificatesResolvers.tls.acme.dnsChallenge.provider=cloudflare'
+  #     - '--certificatesResolvers.tls.acme.dnsChallenge.delayBeforeCheck=0'
+  #     - '--certificatesresolvers.tls.acme.email=${ACME_EMAIL}'
+  #     - '--certificatesresolvers.tls.acme.storage=/letsencrypt/acme.json'
+  #   ports:
+  #     - '80:80'
+  #     - '443:443'
+  #   volumes:
+  #     - '/var/run/docker.sock:/var/run/docker.sock:ro'
+  #     - 'traefik:/letsencrypt'
+  #   environment:
+  #   - 'CF_DNS_API_TOKEN=${CF_TOKEN}'
+
+
+  mariadb:
+    image: mariadb:latest
+    container_name: mariadb
+    restart: always
+    environment:
+      - "MYSQL_ALLOW_EMPTY_PASSWORD=no"
+      - "MYSQL_DATABASE=powerdns"
+      - "MYSQL_USER=pdns"
+      - "MYSQL_PASSWORD=${DB_PASSWORD}"
+    volumes:
+      - "pda-mysql:/var/lib/mysql"
+
+
+  powerdns:
+    image: pschiffe/pdns-mysql:latest
+    container_name: powerdns
+    hostname: ns1
+    domainname: ns1.example.com
+    restart: always
+    depends_on:
+      - mariadb
+    ports:
+      - '53:53/tcp'
+      - '53:53/udp'
+    environment:
+      - 'PDNS_primary=yes'
+      - 'PDNS_gmysql_host=mariadb'
+      - 'PDNS_gmysql_port=3306'
+      - 'PDNS_gmysql_user=pdns'
+      - 'PDNS_gmysql_dbname=powerdns'
+      - 'PDNS_gmysql_password=${DB_PASSWORD}'
+      - 'PDNS_gmysql-dnssec=yes'
+      - 'PDNS_api=yes'
+      - 'PDNS_api_key=${API_KEY}'
+      - 'PDNSCONF_API_KEY=${API_KEY}'
+      - 'PDNS_webserver=yes'
+      - 'PDNS_webserver-allow-from=0.0.0.0/0'
+      - 'PDNS_webserver_address=0.0.0.0'
+      - 'PDNS_webserver_password=${WEB_PASSWORD}'
+      - 'PDNS_version_string=anonymous'
+      - 'PDNS_default_ttl=1500'
+      - 'PDNS_allow_notify_from=0.0.0.0'
+      - 'PDNS_allow_axfr_ips=<slave IP>'
+      - 'PDNS_only_notify=<slave IP>'
+      - 'PDNS_default_soa_content=ns1.example.com.io infra.@ 0 10800 1800 604800 1800'
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.pdns.rule=Host(`${PDNS_DOMAIN}`)'
+      - 'traefik.http.routers.pdns.tls=true'
+      - 'traefik.http.routers.pdns.tls.certresolver=tls'
+      - 'traefik.http.services.pdns.loadbalancer.server.port=8081'
+
+
+  powerdnsadmin:
+    image: powerdnsadmin/pda-legacy:latest
+    container_name: powerdns_admin
+    depends_on:
+      - mariadb
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: 50m
+    environment:
+      - 'SQLALCHEMY_DATABASE_URI=mysql://pdns:${DB_PASSWORD}@mariadb/powerdns'
+      - 'GUNICORN_TIMEOUT=60'
+      - 'GUNICORN_WORKERS=4'
+      - 'GUNICORN_LOGLEVEL=DEBUG'
+    volumes:
+      - 'pdns-admin-upload:/opt/powerdns-admin/upload'
+      - 'pdns-admin-caddy:/var/lib/caddy'
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.pdnsadmin.rule=Host(`${ADMIN_DOMAIN}`)'
+      - 'traefik.http.routers.pdnsadmin.tls=true'
+      - 'traefik.http.routers.pdnsadmin.tls.certresolver=tls'
+      - 'traefik.http.services.pdnsadmin.loadbalancer.server.port=80'
+
+
+volumes:
+  pda-mysql:
+  pdns-admin-upload:
+  pdns-admin-caddy:
+  traefik:
