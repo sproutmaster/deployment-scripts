@@ -62,13 +62,15 @@ mkdir powerdns
 cd !!*
 ```
 
-Copy master or slave compose file depending on what you need
+Copy master or slave compose file depending on what you need and repeat the steps for each machine
 
 After that, just run 
 
 ```bash
-docker compose up -d -f <file.yaml>
+docker compose -f <file.yaml> up -d
 ```
+
+If everything is setup correctly, you should be able to access powerdns admin on 'dns.example.com' and powerdns page on 'ns1.example.com', assuming that you've set traefik to route based on the aforementioned domains.
 
 For troubleshooting, see the logs
 
