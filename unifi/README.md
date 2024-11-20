@@ -1,0 +1,10 @@
+# UniFi Network Controller
+
+Make data directories
+
+```bash
+mkdir -p ./data/db
+mkdir -p ./data/network-application
+```
+
+Unifi app will be available on https://<host-ip>:8443

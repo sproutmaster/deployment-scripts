@@ -1,0 +1,47 @@
+services:
+  unifi-db:
+    container_name: unifi-db
+    image: docker.io/mongo:3.6
+    restart: unless-stopped
+    command: mongod --bind_ip 127.0.0.1
+    configs:
+      - source: init-mongo.js
+        target: /docker-entrypoint-initdb.d/init-mongo.js
+    environment:
+      - PGID=1000
+      - PUID=1000
+      - TZ=Etc/UTC
+    volumes:
+      - type: bind
+        source: ./data/db
+        target: /data/db
+    network_mode: host
+
+  unifi-network-application:
+    container_name: unifi-network-application
+    image: lscr.io/linuxserver/unifi-network-application:latest
+    restart: unless-stopped
+    environment:
+      - MONGO_DBNAME=unifi-db
+      - MONGO_HOST=127.0.0.1
+      - MONGO_PASS=passwd
+      - MONGO_PORT=27017
+      - MONGO_USER=unifi
+      - PGID=1000
+      - PUID=1000
+      - TZ=Etc/UTC
+    volumes:
+      - type: bind
+        source: ./data/network-application
+        target: /config
+    network_mode: host
+    depends_on:
+      unifi-db:
+        condition: service_started
+        required: true
+
+configs:
+  init-mongo.js:
+    content: |
+      db.getSiblingDB("unifi-db").createUser({user: "unifi", pwd: "passwd", roles: [{role: "dbOwner", db: "unifi-db"}]}); 
+      db.getSiblingDB("unifi-db_stat").createUser({user: "unifi", pwd: "passwd", roles: [{role: "dbOwner", db: "unifi-db_stat"}]});
