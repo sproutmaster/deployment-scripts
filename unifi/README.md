@@ -7,4 +7,10 @@ mkdir -p ./data/db
 mkdir -p ./data/network-application
 ```
 
-Unifi app will be available on https://<host-ip>:8443
+Run it
+
+```bash
+docker compose up -f network-controller -d 
+```
+
+Unifi app will be available on `https://<host-ip>:8443`
