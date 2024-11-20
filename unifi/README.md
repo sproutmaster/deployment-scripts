@@ -10,7 +10,7 @@ mkdir -p ./data/network-application
 Run it
 
 ```bash
-docker compose up -f network-controller -d 
+docker compose up -f network-controller.yaml -d 
 ```
 
 Unifi app will be available on `https://<host-ip>:8443`
